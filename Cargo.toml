@@ -1,0 +1,29 @@
+[package]
+name = "simple_cancellation_token"
+version = "0.0.0"
+edition = "2021"
+authors = ["John Lyon-Smtih <john@escapegallery.net>"]
+description = "Simple cancellation token"
+repository = "https://github.com/jlyonsmith/simple_cancellation_token"
+readme = "README.md"
+keywords = []
+categories = []
+license = "Unlicense"
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5", features = ["derive", "env"] }
+lazy_static = "1.5"
+thiserror = "2.0"
+yansi = "1.0"
+
+[dev-dependencies]
+criterion = "^0.5"
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[[bin]]
+name = "simple-cancellation-token"
+path = "src/bin/simple_cancellation_token.rs"
