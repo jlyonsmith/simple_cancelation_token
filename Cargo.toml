@@ -1,10 +1,10 @@
 [package]
-name = "simple_cancellation_token"
+name = "simple_cancelation_token"
 version = "0.0.0"
 edition = "2021"
 authors = ["John Lyon-Smtih <john@escapegallery.net>"]
-description = "Simple cancellation token"
-repository = "https://github.com/jlyonsmith/simple_cancellation_token"
+description = "Simple cancelation token"
+repository = "https://github.com/jlyonsmith/simple_cancelation_token"
 readme = "README.md"
 keywords = []
 categories = []
@@ -23,7 +23,3 @@ criterion = "^0.5"
 [[bench]]
 name = "benchmarks"
 harness = false
-
-[[bin]]
-name = "simple-cancellation-token"
-path = "src/bin/simple_cancellation_token.rs"

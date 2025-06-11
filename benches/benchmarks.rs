@@ -1,6 +1,6 @@
 use core::fmt::Arguments;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use simple_cancellation_token::*;
+use simple_cancelation_token::*;
 
 fn benchmark_1(arg: &str) {
     struct TestLogger;
@@ -11,14 +11,14 @@ fn benchmark_1(arg: &str) {
         }
     }
 
-    impl SimpleCancellationTokenLog for TestLogger {
+    impl SimpleCancelationTokenLog for TestLogger {
         fn output(self: &Self, _args: Arguments) {}
         fn warning(self: &Self, _args: Arguments) {}
         fn error(self: &Self, _args: Arguments) {}
     }
 
     let logger = TestLogger::new();
-    let mut tool = SimpleCancellationTokenTool::new(&logger);
+    let mut tool = SimpleCancelationTokenTool::new(&logger);
     let args: Vec<std::ffi::OsString> = vec!["".into(), arg.into()];
 
     tool.run(args).unwrap();

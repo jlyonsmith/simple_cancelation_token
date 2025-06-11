@@ -515,7 +515,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "simple_cancellation_token"
+name = "simple_cancelation_token"
 version = "0.0.0"
 dependencies = [
  "anyhow",

@@ -1,88 +1,33 @@
-mod log_macros;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
-use anyhow::Context;
-use clap::Parser;
-use core::fmt::Arguments;
-use std::{
-    error::Error,
-    fs::File,
-    io::{self, Read, Write},
-    path::PathBuf,
-};
-
-pub trait SimpleCancellationTokenLog {
-    fn output(self: &Self, args: Arguments);
-    fn warning(self: &Self, args: Arguments);
-    fn error(self: &Self, args: Arguments);
+/// The simplest implementation of an inter-thread cancelation token possible.
+///
+/// This is modeled after [tokio_util::sync::CancelationToken](https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancelationToken.html)
+/// and uses cloning to pass to other threads vs. having multiple separate structs with different functions.
+#[derive(Clone)]
+pub struct CancelationToken {
+    canceled: Arc<AtomicBool>,
 }
 
-pub struct SimpleCancellationTokenTool<'a> {
-    log: &'a dyn SimpleCancellationTokenLog,
-}
+impl CancelationToken {
+    /// Create a new cancelation token.  Clone it to pass it to another thread
+    pub fn new() -> CancelationToken {
+        let canceled = Arc::new(AtomicBool::new(false));
 
-#[derive(Parser)]
-#[clap(version, about, long_about = None)]
-struct Cli {
-    /// Disable colors in output
-    #[arg(long = "no-color", short = 'n', env = "NO_CLI_COLOR")]
-    no_color: bool,
-
-    /// The input file
-    #[arg(value_name = "INPUT_FILE")]
-    input_file: Option<PathBuf>,
-
-    /// The output file
-    #[arg(value_name = "OUTPUT_FILE")]
-    output_file: Option<PathBuf>,
-}
-
-impl Cli {
-    fn get_output(&self) -> anyhow::Result<Box<dyn Write>> {
-        match self.output_file {
-            Some(ref path) => File::create(path)
-                .context(format!(
-                    "Unable to create file '{}'",
-                    path.to_string_lossy()
-                ))
-                .map(|f| Box::new(f) as Box<dyn Write>),
-            None => Ok(Box::new(io::stdout())),
-        }
+        CancelationToken { canceled }
     }
 
-    fn get_input(&self) -> anyhow::Result<Box<dyn Read>> {
-        match self.input_file {
-            Some(ref path) => File::open(path)
-                .context(format!("Unable to open file '{}'", path.to_string_lossy()))
-                .map(|f| Box::new(f) as Box<dyn Read>),
-            None => Ok(Box::new(io::stdin())),
-        }
-    }
-}
-
-impl<'a> SimpleCancellationTokenTool<'a> {
-    pub fn new(log: &'a dyn SimpleCancellationTokenLog) -> SimpleCancellationTokenTool<'a> {
-        SimpleCancellationTokenTool { log }
+    /// Flips the state of the token to canceled, if it isn't already
+    #[inline]
+    pub fn cancel(&self) {
+        self.canceled.store(true, Ordering::Release);
     }
 
-    pub fn run(
-        self: &mut Self,
-        args: impl IntoIterator<Item = std::ffi::OsString>,
-    ) -> Result<(), Box<dyn Error>> {
-        let cli = match Cli::try_parse_from(args) {
-            Ok(m) => m,
-            Err(err) => {
-                output!(self.log, "{}", err.to_string());
-                return Ok(());
-            }
-        };
-
-        let mut content = String::new();
-
-        cli.get_input()?.read_to_string(&mut content)?;
-
-        write!(cli.get_output()?, "{}", content)?;
-
-        Ok(())
+    /// Checks if the token has been canceled
+    #[inline]
+    pub fn is_canceled(&self) -> bool {
+        self.canceled.load(Ordering::Acquire)
     }
 }
 
@@ -92,24 +37,14 @@ mod tests {
 
     #[test]
     fn basic_test() {
-        struct TestLogger;
+        let token = CancelationToken::new();
 
-        impl TestLogger {
-            fn new() -> TestLogger {
-                TestLogger {}
-            }
-        }
-
-        impl SimpleCancellationTokenLog for TestLogger {
-            fn output(self: &Self, _args: Arguments) {}
-            fn warning(self: &Self, _args: Arguments) {}
-            fn error(self: &Self, _args: Arguments) {}
-        }
-
-        let logger = TestLogger::new();
-        let mut tool = SimpleCancellationTokenTool::new(&logger);
-        let args: Vec<std::ffi::OsString> = vec!["".into(), "--help".into()];
-
-        tool.run(args).unwrap();
+        assert!(!token.is_canceled(), "Token is was created canceled");
+        let other_token = token.clone();
+        token.cancel();
+        assert!(
+            token.is_canceled() && other_token.is_canceled(),
+            "Token and clone(s) should be canceled"
+        );
     }
 }
