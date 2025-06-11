@@ -6,6 +6,6 @@
 
 ## Summary
 
-This is a very simple implementation of an inter-thread cancelation token. It is modeled after [tokio_util::sync::CancelationToken](https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancelationToken.html) and uses cloning to pass to other threads vs. having multiple separate structs with different functions. It's for when you don't need all of `tokio` and you just want signal worker thread(s) to stop, for example after hitting Ctrl+C
+This is a very simple implementation of an inter-thread cancelation token. It is modeled after [tokio_util::sync::CancelationToken](https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancellationToken.html) and uses cloning for passing it to other threads vs. having multiple separate structs with different functions. It's for when you don't need all of `tokio` and you just want to signal worker threads to stop, for example, after hitting Ctrl+C.
 
-Plus, it also uses the [American spelling of cancelation](https://www.grammarpalette.com/cancelation-vs-cancelation-which-spelling/) just to be different.
+Plus, it also uses the [American spelling of cancelation](https://www.grammarpalette.com/cancellation-vs-cancelation-which-spelling/) just to be different.
